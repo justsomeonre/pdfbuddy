@@ -14,12 +14,12 @@ import {
   Square,
   Undo2,
   Trash2,
-  Download,
   ChevronLeft,
   ChevronRight,
   Sparkles,
   Save,
 } from 'lucide-react';
+import { SuccessResultCard } from '@/components/common/SuccessResultCard';
 
 interface Annotation {
   type: 'pen' | 'highlighter' | 'text' | 'rect';
@@ -142,19 +142,21 @@ export const EditPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     ctx.restore();
   };
 
-  const getCanvasCoords = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const getCanvasCoords = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
+    const clientX = 'touches' in e ? (e.touches[0]?.clientX ?? e.changedTouches[0]?.clientX ?? 0) : e.clientX;
+    const clientY = 'touches' in e ? (e.touches[0]?.clientY ?? e.changedTouches[0]?.clientY ?? 0) : e.clientY;
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
     return {
-      x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY,
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY,
     };
   };
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     const coords = getCanvasCoords(e);
 
     if (activeTool === 'text') {
@@ -194,7 +196,7 @@ export const EditPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     setCurrentPoints([coords]);
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (!isDrawing) return;
     const coords = getCanvasCoords(e);
     const newPoints = [...currentPoints, coords];
@@ -314,15 +316,6 @@ export const EditPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }
   };
 
-  const downloadResult = () => {
-    if (procState.resultUrl && procState.resultFileName) {
-      const a = document.createElement('a');
-      a.href = procState.resultUrl;
-      a.download = procState.resultFileName;
-      a.click();
-    }
-  };
-
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       <ToolHeader
@@ -344,36 +337,15 @@ export const EditPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         </div>
       )}
 
-      {procState.status === 'success' && (
-        <div className="p-8 bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-800 text-center max-w-xl mx-auto space-y-6 animate-fade-in">
-          <div className="w-16 h-16 mx-auto rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-            <Sparkles className="w-8 h-8" />
-          </div>
-          <div>
-            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-              Edits Saved!
-            </h3>
-            <p className="text-slate-500 dark:text-slate-400 text-sm">
-              Your modifications and annotations are compiled into the PDF.
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button
-              onClick={downloadResult}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-semibold flex items-center justify-center gap-2 shadow-lg shadow-cyan-600/30 transition-all hover:scale-105"
-            >
-              <Download className="w-5 h-5" />
-              Download Edited PDF
-            </button>
-            <button
-              onClick={() => setProcState({ status: 'idle', progress: 0 })}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold transition-all"
-            >
-              Continue Editing
-            </button>
-          </div>
-        </div>
+      {procState.status === 'success' && procState.resultUrl && procState.resultFileName && (
+        <SuccessResultCard
+          title="Edits Saved!"
+          message="Your modifications and annotations are compiled into the PDF."
+          resultUrl={procState.resultUrl}
+          resultFileName={procState.resultFileName}
+          onReset={() => setProcState({ status: 'idle', progress: 0 })}
+          accentColor="bg-cyan-600 hover:bg-cyan-700 shadow-cyan-600/30"
+        />
       )}
 
       {procState.status === 'idle' && (
@@ -500,6 +472,19 @@ export const EditPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
                   onMouseUp={handleMouseUp}
+                  onTouchStart={(e) => {
+                    e.preventDefault();
+                    handleMouseDown(e);
+                  }}
+                  onTouchMove={(e) => {
+                    e.preventDefault();
+                    handleMouseMove(e);
+                  }}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    handleMouseUp();
+                  }}
+                  style={{ touchAction: 'none' }}
                   className="shadow-2xl rounded-lg bg-white cursor-crosshair max-w-full"
                 />
               </div>

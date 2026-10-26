@@ -4,9 +4,10 @@ import { UploadedFile, ProcessingState } from '@/types';
 import { ToolHeader } from '@/components/common/ToolHeader';
 import { FileUploader } from '@/components/common/FileUploader';
 import { ProgressBar } from '@/components/common/ProgressBar';
+import { SuccessResultCard } from '@/components/common/SuccessResultCard';
 import { mergePdfs } from '@/utils/pdfHelper';
 import { readFileAsArrayBuffer, formatBytes } from '@/utils/formatters';
-import { ArrowUp, ArrowDown, Trash2, Download, CheckCircle } from 'lucide-react';
+import { ArrowUp, ArrowDown, Trash2, Download } from 'lucide-react';
 
 export const MergePdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [files, setFiles] = useState<UploadedFile[]>([]);
@@ -49,18 +50,18 @@ export const MergePdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
       const buffers: ArrayBuffer[] = [];
       for (let i = 0; i < files.length; i++) {
-        const buf = await readFileAsArrayBuffer(files[0].file);
+        const buf = await readFileAsArrayBuffer(files[i].file);
         buffers.push(buf);
         setProcState({
           status: 'processing',
-          progress: 20 + Math.round(((i + 1) / files.length) * 30),
+          progress: 20 + Math.round(((i + 1) / files.length) * 35),
           message: `Loaded ${files[i].name}...`,
         });
       }
 
       setProcState({
         status: 'processing',
-        progress: 60,
+        progress: 65,
         message: 'Combining pages into unified document...',
       });
 
@@ -74,19 +75,19 @@ export const MergePdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
       const mergedBlob = new Blob([mergedBytes as any], { type: 'application/pdf' });
       const url = URL.createObjectURL(mergedBlob);
-      const defaultName = `pdfbuddy_merged_${new Date().toISOString().slice(0, 10)}.pdf`;
+      const defaultName = `pdfbuddy_merged_${Date.now()}.pdf`;
 
       setProcState({
         status: 'success',
         progress: 100,
-        message: 'PDFs merged successfully!',
+        message: `Successfully merged ${files.length} PDF files into one document!`,
         resultUrl: url,
         resultFileName: defaultName,
       });
 
       confetti({
-        particleCount: 100,
-        spread: 70,
+        particleCount: 80,
+        spread: 60,
         origin: { y: 0.6 },
       });
     } catch (err: any) {
@@ -99,15 +100,6 @@ export const MergePdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }
   };
 
-  const downloadResult = () => {
-    if (procState.resultUrl && procState.resultFileName) {
-      const a = document.createElement('a');
-      a.href = procState.resultUrl;
-      a.download = procState.resultFileName;
-      a.click();
-    }
-  };
-
   const reset = () => {
     setFiles([]);
     setProcState({ status: 'idle', progress: 0 });
@@ -116,7 +108,7 @@ export const MergePdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const totalSize = files.reduce((acc, f) => acc + f.size, 0);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8">
       <ToolHeader
         title="Merge PDF Files"
         description="Combine two or more PDF files into a single document in whatever order you prefer. Unlimited file size, processed 100% locally."
@@ -135,36 +127,15 @@ export const MergePdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         </div>
       )}
 
-      {procState.status === 'success' && (
-        <div className="p-8 bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-800 text-center max-w-xl mx-auto space-y-6 animate-fade-in">
-          <div className="w-16 h-16 mx-auto rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-            <CheckCircle className="w-8 h-8" />
-          </div>
-          <div>
-            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-              Merge Complete!
-            </h3>
-            <p className="text-slate-500 dark:text-slate-400 text-sm">
-              Your {files.length} PDF files have been combined into a single file.
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button
-              onClick={downloadResult}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold flex items-center justify-center gap-2 shadow-lg shadow-rose-600/30 transition-all hover:scale-105"
-            >
-              <Download className="w-5 h-5" />
-              Download Merged PDF
-            </button>
-            <button
-              onClick={reset}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold transition-all"
-            >
-              Merge More PDFs
-            </button>
-          </div>
-        </div>
+      {procState.status === 'success' && procState.resultUrl && procState.resultFileName && (
+        <SuccessResultCard
+          title="PDFs Merged Successfully!"
+          message={`Your ${files.length} documents have been merged into a single file.`}
+          resultUrl={procState.resultUrl}
+          resultFileName={procState.resultFileName}
+          onReset={reset}
+          accentColor="bg-rose-600 hover:bg-rose-700"
+        />
       )}
 
       {procState.status === 'idle' && (
@@ -174,17 +145,17 @@ export const MergePdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             multiple={true}
             files={files}
             onFilesChange={setFiles}
-            title="Drop PDF files here to merge"
-            subtitle="Add all files you want to combine. You can reorder them easily below."
+            title="Select or drop PDF files here"
+            subtitle="Add all files you want to combine. Reorder them easily below."
           />
 
           {files.length > 0 && (
-            <div className="p-6 bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 space-y-4">
+            <div className="p-4 sm:p-6 bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                  Merge Sequence (Total: {formatBytes(totalSize)})
+                <span className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Merge Sequence ({files.length} files • {formatBytes(totalSize)})
                 </span>
-                <span className="text-xs text-slate-400">
+                <span className="text-[11px] text-slate-400 hidden sm:block">
                   Use arrows to change order
                 </span>
               </div>
@@ -193,17 +164,17 @@ export const MergePdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 {files.map((file, idx) => (
                   <div
                     key={file.id}
-                    className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-850 border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 transition-colors"
+                    className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-850 border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 transition-colors gap-2"
                   >
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
                       <span className="w-6 h-6 rounded-lg bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 text-xs font-bold flex items-center justify-center flex-shrink-0">
                         {idx + 1}
                       </span>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">
                           {file.name}
                         </p>
-                        <p className="text-xs text-slate-400 font-mono">
+                        <p className="text-[11px] text-slate-400 font-mono">
                           {formatBytes(file.size)}
                         </p>
                       </div>
@@ -241,12 +212,12 @@ export const MergePdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 ))}
               </div>
 
-              <div className="pt-4 flex justify-end">
+              <div className="pt-2 flex justify-end">
                 <button
                   type="button"
                   onClick={handleMerge}
                   disabled={files.length < 2}
-                  className="px-8 py-3.5 rounded-2xl bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm shadow-xl shadow-rose-600/30 transition-all hover:scale-102 flex items-center gap-2"
+                  className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm shadow-xl shadow-rose-600/30 transition-all hover:scale-102 flex items-center justify-center gap-2"
                 >
                   <Download className="w-4 h-4" />
                   Merge {files.length} PDFs Now

@@ -151,13 +151,14 @@ export const ExtractImagesTool: React.FC<{ onBack: () => void }> = ({ onBack }) 
                     </button>
                   </div>
                 </div>
-                <div className="flex justify-between items-center text-xs text-slate-500 px-1">
-                  <span>Image #{idx + 1}</span>
+                <div className="flex justify-between items-center text-xs text-slate-500 px-1 pt-1">
+                  <span className="font-bold">Image #{idx + 1}</span>
                   <button
                     onClick={() => downloadDataUrl(dataUrl, `extracted_img_${idx + 1}.jpg`)}
-                    className="text-amber-600 hover:underline"
+                    className="min-h-[36px] px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 font-semibold hover:bg-amber-100 flex items-center gap-1 transition-colors active:scale-95"
                   >
-                    Download
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Save</span>
                   </button>
                 </div>
               </div>

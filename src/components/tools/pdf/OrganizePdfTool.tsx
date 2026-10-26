@@ -6,7 +6,8 @@ import { FileUploader } from '@/components/common/FileUploader';
 import { ProgressBar } from '@/components/common/ProgressBar';
 import { getPdfJsDoc, renderPageToDataUrl, reorderPdf } from '@/utils/pdfHelper';
 import { readFileAsArrayBuffer } from '@/utils/formatters';
-import { Grid, ArrowLeft, ArrowRight, Trash2, Copy, Download, CheckCircle, Save } from 'lucide-react';
+import { Grid, ArrowLeft, ArrowRight, Trash2, Copy, Save } from 'lucide-react';
+import { SuccessResultCard } from '@/components/common/SuccessResultCard';
 
 interface PageItem {
   id: string;
@@ -120,15 +121,6 @@ export const OrganizePdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) =>
     }
   };
 
-  const downloadResult = () => {
-    if (procState.resultUrl && procState.resultFileName) {
-      const a = document.createElement('a');
-      a.href = procState.resultUrl;
-      a.download = procState.resultFileName;
-      a.click();
-    }
-  };
-
   const reset = () => {
     setFiles([]);
     setPages([]);
@@ -155,37 +147,15 @@ export const OrganizePdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) =>
         </div>
       )}
 
-      {procState.status === 'success' && (
-        <div className="p-8 bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-800 text-center max-w-xl mx-auto space-y-6 animate-fade-in">
-          <div className="w-16 h-16 mx-auto rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-            <CheckCircle className="w-8 h-8" />
-          </div>
-
-          <div>
-            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-              Organized PDF Ready!
-            </h3>
-            <p className="text-slate-500 dark:text-slate-400 text-sm">
-              Your document now contains {pages.length} pages in your chosen order.
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button
-              onClick={downloadResult}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 transition-all hover:scale-105"
-            >
-              <Download className="w-5 h-5" />
-              Download Organized PDF
-            </button>
-            <button
-              onClick={reset}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold transition-all"
-            >
-              Organize Another
-            </button>
-          </div>
-        </div>
+      {procState.status === 'success' && procState.resultUrl && procState.resultFileName && (
+        <SuccessResultCard
+          title="Organized PDF Ready!"
+          message={`Your document now contains ${pages.length} pages in your chosen order.`}
+          resultUrl={procState.resultUrl}
+          resultFileName={procState.resultFileName}
+          onReset={reset}
+          accentColor="bg-blue-600 hover:bg-blue-700 shadow-blue-600/30"
+        />
       )}
 
       {procState.status === 'idle' && (

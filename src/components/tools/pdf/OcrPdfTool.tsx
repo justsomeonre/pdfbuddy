@@ -164,29 +164,29 @@ export const OcrPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2.5">
               <button
                 onClick={copyToClipboard}
-                className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold text-xs flex items-center gap-1.5 transition-colors"
+                className="min-h-[44px] px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold text-xs flex items-center gap-1.5 transition-colors active:scale-95"
               >
                 {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
                 {copied ? 'Copied!' : 'Copy Text'}
               </button>
               <button
                 onClick={downloadTxt}
-                className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold text-xs flex items-center gap-1.5 transition-colors"
+                className="min-h-[44px] px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold text-xs flex items-center gap-1.5 transition-colors active:scale-95"
               >
-                <Download className="w-4 h-4" /> TXT
+                <Download className="w-4 h-4" /> Download TXT
               </button>
               <button
                 onClick={downloadWordDoc}
-                className="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-md shadow-teal-600/30 transition-all hover:scale-105"
+                className="min-h-[44px] px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-md shadow-teal-600/30 transition-all hover:scale-105 active:scale-95"
               >
                 <Download className="w-4 h-4" /> Word (.docx)
               </button>
               <button
                 onClick={reset}
-                className="px-3 py-2.5 text-xs text-slate-500 hover:text-slate-700 underline"
+                className="min-h-[44px] px-3 py-2.5 text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-semibold transition-colors"
               >
                 Scan Another
               </button>

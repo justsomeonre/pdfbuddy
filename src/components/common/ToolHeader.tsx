@@ -23,10 +23,10 @@ export const ToolHeader: React.FC<ToolHeaderProps> = ({
     <div className="mb-8">
       <button
         onClick={onBack}
-        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition-colors mb-4"
+        className="inline-flex items-center gap-2 min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition-all active:scale-95 mb-4 shadow-xs"
       >
         <ArrowLeft className="w-4 h-4" />
-        Back to Tools
+        ← Back to All Tools
       </button>
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

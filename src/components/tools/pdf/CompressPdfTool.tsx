@@ -6,7 +6,8 @@ import { FileUploader } from '@/components/common/FileUploader';
 import { ProgressBar } from '@/components/common/ProgressBar';
 import { compressPdfClientSide } from '@/utils/pdfHelper';
 import { readFileAsArrayBuffer, formatBytes } from '@/utils/formatters';
-import { Minimize2, Download, CheckCircle } from 'lucide-react';
+import { Minimize2 } from 'lucide-react';
+import { SuccessResultCard } from '@/components/common/SuccessResultCard';
 
 export const CompressPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [files, setFiles] = useState<UploadedFile[]>([]);
@@ -69,15 +70,6 @@ export const CompressPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) =>
     }
   };
 
-  const downloadResult = () => {
-    if (procState.resultUrl && procState.resultFileName) {
-      const a = document.createElement('a');
-      a.href = procState.resultUrl;
-      a.download = procState.resultFileName;
-      a.click();
-    }
-  };
-
   const reset = () => {
     setFiles([]);
     setProcState({ status: 'idle', progress: 0 });
@@ -111,31 +103,18 @@ export const CompressPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) =>
         </div>
       )}
 
-      {procState.status === 'success' && (
-        <div className="p-8 bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-800 text-center max-w-xl mx-auto space-y-6 animate-fade-in">
-          <div className="w-16 h-16 mx-auto rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-            <CheckCircle className="w-8 h-8" />
-          </div>
-
-          <div>
-            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-              Compression Successful!
-            </h3>
-            <p className="text-slate-500 dark:text-slate-400 text-sm">
-              Your PDF has been compressed directly on your device.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
+      {procState.status === 'success' && procState.resultUrl && procState.resultFileName && (
+        <div className="space-y-4">
+          <div className="max-w-lg mx-auto grid grid-cols-3 gap-3 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm text-center">
             <div>
               <p className="text-xs text-slate-400">Original Size</p>
-              <p className="text-base font-bold text-slate-700 dark:text-slate-200 font-mono mt-0.5">
+              <p className="text-sm sm:text-base font-bold text-slate-700 dark:text-slate-200 font-mono mt-0.5">
                 {formatBytes(originalSize)}
               </p>
             </div>
             <div>
-              <p className="text-xs text-slate-400">Compressed Size</p>
-              <p className="text-base font-bold text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">
+              <p className="text-xs text-slate-400">Compressed</p>
+              <p className="text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">
                 {formatBytes(compressedSize)}
               </p>
             </div>
@@ -147,21 +126,14 @@ export const CompressPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) =>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button
-              onClick={downloadResult}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 transition-all hover:scale-105"
-            >
-              <Download className="w-5 h-5" />
-              Download Compressed PDF
-            </button>
-            <button
-              onClick={reset}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold transition-all"
-            >
-              Compress Another
-            </button>
-          </div>
+          <SuccessResultCard
+            title="Compression Successful!"
+            message={`Your PDF was compressed from ${formatBytes(originalSize)} down to ${formatBytes(compressedSize)}.`}
+            resultUrl={procState.resultUrl}
+            resultFileName={procState.resultFileName}
+            onReset={reset}
+            accentColor="bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30"
+          />
         </div>
       )}
 

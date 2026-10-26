@@ -6,7 +6,8 @@ import { FileUploader } from '@/components/common/FileUploader';
 import { ProgressBar } from '@/components/common/ProgressBar';
 import { addPageNumbersToPdf } from '@/utils/pdfHelper';
 import { readFileAsArrayBuffer } from '@/utils/formatters';
-import { Hash, Download, CheckCircle } from 'lucide-react';
+import { Hash } from 'lucide-react';
+import { SuccessResultCard } from '@/components/common/SuccessResultCard';
 
 export const PageNumbersTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [files, setFiles] = useState<UploadedFile[]>([]);
@@ -63,15 +64,6 @@ export const PageNumbersTool: React.FC<{ onBack: () => void }> = ({ onBack }) =>
     }
   };
 
-  const downloadResult = () => {
-    if (procState.resultUrl && procState.resultFileName) {
-      const a = document.createElement('a');
-      a.href = procState.resultUrl;
-      a.download = procState.resultFileName;
-      a.click();
-    }
-  };
-
   const reset = () => {
     setFiles([]);
     setProcState({ status: 'idle', progress: 0 });
@@ -106,37 +98,15 @@ export const PageNumbersTool: React.FC<{ onBack: () => void }> = ({ onBack }) =>
         </div>
       )}
 
-      {procState.status === 'success' && (
-        <div className="p-8 bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-800 text-center max-w-xl mx-auto space-y-6 animate-fade-in">
-          <div className="w-16 h-16 mx-auto rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-            <CheckCircle className="w-8 h-8" />
-          </div>
-
-          <div>
-            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-              Page Numbers Added!
-            </h3>
-            <p className="text-slate-500 dark:text-slate-400 text-sm">
-              Your document has been numbered cleanly according to your settings.
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button
-              onClick={downloadResult}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-semibold flex items-center justify-center gap-2 shadow-lg shadow-sky-600/30 transition-all hover:scale-105"
-            >
-              <Download className="w-5 h-5" />
-              Download Numbered PDF
-            </button>
-            <button
-              onClick={reset}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold transition-all"
-            >
-              Number Another
-            </button>
-          </div>
-        </div>
+      {procState.status === 'success' && procState.resultUrl && procState.resultFileName && (
+        <SuccessResultCard
+          title="Page Numbers Added!"
+          message="Your document has been numbered cleanly according to your settings."
+          resultUrl={procState.resultUrl}
+          resultFileName={procState.resultFileName}
+          onReset={reset}
+          accentColor="bg-sky-600 hover:bg-sky-700 shadow-sky-600/30"
+        />
       )}
 
       {procState.status === 'idle' && (

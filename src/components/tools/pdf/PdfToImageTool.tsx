@@ -166,13 +166,14 @@ export const PdfToImageTool: React.FC<{ onBack: () => void }> = ({ onBack }) => 
                     </button>
                   </div>
                 </div>
-                <div className="flex items-center justify-between text-xs text-slate-500 font-medium px-1">
-                  <span>Page {idx + 1}</span>
+                <div className="flex items-center justify-between text-xs text-slate-500 font-medium px-1 pt-1">
+                  <span className="font-bold">Page {idx + 1}</span>
                   <button
                     onClick={() => downloadSinglePage(dataUrl, idx + 1)}
-                    className="text-rose-600 hover:underline"
+                    className="min-h-[36px] px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-semibold hover:bg-rose-100 dark:hover:bg-rose-900/60 flex items-center gap-1 transition-colors active:scale-95"
                   >
-                    Download
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Save</span>
                   </button>
                 </div>
               </div>

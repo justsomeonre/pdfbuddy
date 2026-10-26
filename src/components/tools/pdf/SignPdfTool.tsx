@@ -14,12 +14,12 @@ import {
   Type,
   Upload,
   Download,
-  CheckCircle,
   Trash2,
   Move,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
+import { SuccessResultCard } from '@/components/common/SuccessResultCard';
 
 export const SignPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [files, setFiles] = useState<UploadedFile[]>([]);
@@ -101,31 +101,43 @@ export const SignPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }
   };
 
-  const handleSigMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const getSigCoords = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    const clientX = 'touches' in e ? (e.touches[0]?.clientX ?? e.changedTouches[0]?.clientX ?? 0) : e.clientX;
+    const clientY = 'touches' in e ? (e.touches[0]?.clientY ?? e.changedTouches[0]?.clientY ?? 0) : e.clientY;
+    return {
+      x: (clientX - rect.left) * (canvas.width / rect.width),
+      y: (clientY - rect.top) * (canvas.height / rect.height),
+    };
+  };
+
+  const handleSigMouseDown = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     setIsDrawingSig(true);
     const canvas = sigCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const rect = canvas.getBoundingClientRect();
+    const coords = getSigCoords(e);
     ctx.strokeStyle = '#000000';
     ctx.lineWidth = 3;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.beginPath();
-    ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+    ctx.moveTo(coords.x, coords.y);
   };
 
-  const handleSigMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleSigMouseMove = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (!isDrawingSig) return;
     const canvas = sigCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const rect = canvas.getBoundingClientRect();
-    ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+    const coords = getSigCoords(e);
+    ctx.lineTo(coords.x, coords.y);
     ctx.stroke();
   };
 
@@ -183,25 +195,29 @@ export const SignPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     reader.readAsDataURL(file);
   };
 
-  const handlePdfCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!signatureDataUrl) return;
+  const getPdfCoords = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     const canvas = pdfViewCanvasRef.current;
-    if (!canvas) return;
+    if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
-    setSigPosition({ x: Math.max(0, x - 70), y: Math.max(0, y - 30) });
+    const clientX = 'touches' in e ? (e.touches[0]?.clientX ?? e.changedTouches[0]?.clientX ?? 0) : e.clientX;
+    const clientY = 'touches' in e ? (e.touches[0]?.clientY ?? e.changedTouches[0]?.clientY ?? 0) : e.clientY;
+    return {
+      x: (clientX - rect.left) * (canvas.width / rect.width),
+      y: (clientY - rect.top) * (canvas.height / rect.height),
+    };
+  };
+
+  const handlePdfCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!signatureDataUrl) return;
+    const coords = getPdfCoords(e);
+    setSigPosition({ x: Math.max(0, coords.x - 70), y: Math.max(0, coords.y - 30) });
     setIsDraggingSig(true);
   };
 
-  const handlePdfCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handlePdfCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (!isDraggingSig || !signatureDataUrl) return;
-    const canvas = pdfViewCanvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
-    setSigPosition({ x: Math.max(0, x - 70), y: Math.max(0, y - 30) });
+    const coords = getPdfCoords(e);
+    setSigPosition({ x: Math.max(0, coords.x - 70), y: Math.max(0, coords.y - 30) });
   };
 
   const handlePdfCanvasMouseUp = () => {
@@ -272,15 +288,6 @@ export const SignPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }
   };
 
-  const downloadResult = () => {
-    if (procState.resultUrl && procState.resultFileName) {
-      const a = document.createElement('a');
-      a.href = procState.resultUrl;
-      a.download = procState.resultFileName;
-      a.click();
-    }
-  };
-
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       <ToolHeader
@@ -301,36 +308,15 @@ export const SignPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         </div>
       )}
 
-      {procState.status === 'success' && (
-        <div className="p-8 bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-800 text-center max-w-xl mx-auto space-y-6 animate-fade-in">
-          <div className="w-16 h-16 mx-auto rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-            <CheckCircle className="w-8 h-8" />
-          </div>
-          <div>
-            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-              Signature Applied!
-            </h3>
-            <p className="text-slate-500 dark:text-slate-400 text-sm">
-              Your signature is sealed onto page {currentPage}.
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button
-              onClick={downloadResult}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold flex items-center justify-center gap-2 shadow-lg shadow-purple-600/30 transition-all hover:scale-105"
-            >
-              <Download className="w-5 h-5" />
-              Download Signed PDF
-            </button>
-            <button
-              onClick={() => setProcState({ status: 'idle', progress: 0 })}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold transition-all"
-            >
-              Adjust Signature
-            </button>
-          </div>
-        </div>
+      {procState.status === 'success' && procState.resultUrl && procState.resultFileName && (
+        <SuccessResultCard
+          title="Signature Applied!"
+          message={`Your signature is sealed onto page ${currentPage}.`}
+          resultUrl={procState.resultUrl}
+          resultFileName={procState.resultFileName}
+          onReset={() => setProcState({ status: 'idle', progress: 0 })}
+          accentColor="bg-purple-600 hover:bg-purple-700 shadow-purple-600/30"
+        />
       )}
 
       {procState.status === 'idle' && (
@@ -394,6 +380,19 @@ export const SignPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         onMouseDown={handleSigMouseDown}
                         onMouseMove={handleSigMouseMove}
                         onMouseUp={handleSigMouseUp}
+                        onTouchStart={(e) => {
+                          e.preventDefault();
+                          handleSigMouseDown(e);
+                        }}
+                        onTouchMove={(e) => {
+                          e.preventDefault();
+                          handleSigMouseMove(e);
+                        }}
+                        onTouchEnd={(e) => {
+                          e.preventDefault();
+                          handleSigMouseUp();
+                        }}
+                        style={{ touchAction: 'none' }}
                         className="w-full cursor-crosshair bg-white"
                       />
                     </div>
@@ -515,6 +514,19 @@ export const SignPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     onMouseDown={handlePdfCanvasMouseDown}
                     onMouseMove={handlePdfCanvasMouseMove}
                     onMouseUp={handlePdfCanvasMouseUp}
+                    onTouchStart={(e) => {
+                      e.preventDefault();
+                      handlePdfCanvasMouseDown(e);
+                    }}
+                    onTouchMove={(e) => {
+                      e.preventDefault();
+                      handlePdfCanvasMouseMove(e);
+                    }}
+                    onTouchEnd={(e) => {
+                      e.preventDefault();
+                      handlePdfCanvasMouseUp();
+                    }}
+                    style={{ touchAction: 'none' }}
                     className="shadow-2xl rounded-lg bg-white cursor-move max-w-full"
                   />
                 </div>

@@ -7,7 +7,8 @@ import { ProgressBar } from '@/components/common/ProgressBar';
 import { getPdfJsDoc, renderPageToCanvas } from '@/utils/pdfHelper';
 import { readFileAsArrayBuffer } from '@/utils/formatters';
 import { PDFDocument } from 'pdf-lib';
-import { EyeOff, Download, CheckCircle, Undo2, ChevronLeft, ChevronRight, Save } from 'lucide-react';
+import { EyeOff, Undo2, ChevronLeft, ChevronRight, Save } from 'lucide-react';
+import { SuccessResultCard } from '@/components/common/SuccessResultCard';
 
 interface RedactBox {
   x: number;
@@ -80,25 +81,27 @@ export const RedactPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }
   };
 
-  const getCanvasCoords = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const getCanvasCoords = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
+    const clientX = 'touches' in e ? (e.touches[0]?.clientX ?? e.changedTouches[0]?.clientX ?? 0) : e.clientX;
+    const clientY = 'touches' in e ? (e.touches[0]?.clientY ?? e.changedTouches[0]?.clientY ?? 0) : e.clientY;
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
     return {
-      x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY,
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY,
     };
   };
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     const coords = getCanvasCoords(e);
     setIsDrawing(true);
     setStartPoint(coords);
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (!isDrawing || !startPoint) return;
     const coords = getCanvasCoords(e);
     const canvas = canvasRef.current;
@@ -117,10 +120,10 @@ export const RedactPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     ctx.strokeRect(startPoint.x, startPoint.y, w, h);
   };
 
-  const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleMouseUp = (e?: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (!isDrawing || !startPoint) return;
     setIsDrawing(false);
-    const coords = getCanvasCoords(e);
+    const coords = e ? getCanvasCoords(e) : startPoint;
 
     const x = Math.min(startPoint.x, coords.x);
     const y = Math.min(startPoint.y, coords.y);
@@ -207,15 +210,6 @@ export const RedactPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }
   };
 
-  const downloadResult = () => {
-    if (procState.resultUrl && procState.resultFileName) {
-      const a = document.createElement('a');
-      a.href = procState.resultUrl;
-      a.download = procState.resultFileName;
-      a.click();
-    }
-  };
-
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       <ToolHeader
@@ -236,37 +230,15 @@ export const RedactPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         </div>
       )}
 
-      {procState.status === 'success' && (
-        <div className="p-8 bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-800 text-center max-w-xl mx-auto space-y-6 animate-fade-in">
-          <div className="w-16 h-16 mx-auto rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-            <CheckCircle className="w-8 h-8" />
-          </div>
-
-          <div>
-            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-              Redaction Applied!
-            </h3>
-            <p className="text-slate-500 dark:text-slate-400 text-sm">
-              Blacked-out areas cannot be highlighted or recovered.
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button
-              onClick={downloadResult}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-semibold flex items-center justify-center gap-2 shadow-lg transition-all hover:scale-105"
-            >
-              <Download className="w-5 h-5" />
-              Download Redacted PDF
-            </button>
-            <button
-              onClick={() => setProcState({ status: 'idle', progress: 0 })}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold transition-all"
-            >
-              Redact More
-            </button>
-          </div>
-        </div>
+      {procState.status === 'success' && procState.resultUrl && procState.resultFileName && (
+        <SuccessResultCard
+          title="Redaction Applied!"
+          message="Blacked-out areas are baked into the PDF and cannot be highlighted or recovered."
+          resultUrl={procState.resultUrl}
+          resultFileName={procState.resultFileName}
+          onReset={() => setProcState({ status: 'idle', progress: 0 })}
+          accentColor="bg-slate-900 hover:bg-black shadow-slate-900/30"
+        />
       )}
 
       {procState.status === 'idle' && (
@@ -330,6 +302,19 @@ export const RedactPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
                   onMouseUp={handleMouseUp}
+                  onTouchStart={(e) => {
+                    e.preventDefault();
+                    handleMouseDown(e);
+                  }}
+                  onTouchMove={(e) => {
+                    e.preventDefault();
+                    handleMouseMove(e);
+                  }}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    handleMouseUp(e);
+                  }}
+                  style={{ touchAction: 'none' }}
                   className="shadow-2xl rounded-lg bg-white cursor-crosshair max-w-full"
                 />
               </div>
